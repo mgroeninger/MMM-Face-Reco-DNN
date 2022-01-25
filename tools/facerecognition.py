@@ -108,6 +108,8 @@ while True:
 	# grab the frame from the threaded video stream and resize it
 	# to 500px (to speedup processing)
 	originalFrame = vs.read()
+	if args["usePiCamera"] < 1 and args["rotateCamera"] != 0:
+		originalFrame = imutils.rotate(originalFrame, angle=args["rotateCamera"])	
 	frame = imutils.resize(originalFrame, width=500)
 
 	if args["method"] == "dnn":
