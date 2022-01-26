@@ -28,7 +28,7 @@ module.exports = NodeHelper.create({
         '--method=' + this.config.method,
         '--detectionMethod=' + this.config.detectionMethod,
         '--interval=' + this.config.checkInterval,
-        '--output=' + this.config.output,
+        '--output=' + 0,
         '--extendDataset=' + extendedDataset,
         '--dataset=' + this.config.dataset,
         '--tolerance=' + this.config.tolerance,
@@ -53,12 +53,7 @@ module.exports = NodeHelper.create({
         console.log('[' + self.name + '] ' + message.status);
       }
       if (message.hasOwnProperty('motion')) {
-        console.log(
-          '[' +
-            self.name +
-            '] ' +
-            'Motion detected'
-        );
+        console.log('[' +self.name +'] ' + 'Motion detected');
         self.sendSocketNotification('motion');
       }
       // Somebody new are in front of the camera, send it back to the Magic Mirror Module
