@@ -65,6 +65,8 @@ ap.add_argument("-ds", "--dataset", required=False, default="../dataset/",
 	help="path to input directory of faces + images")
 ap.add_argument("-t", "--tolerance", type=float, required=False, default=0.6,
 	help="How much distance between faces to consider it a match. Lower is more strict.")
+ap.add_argument("--minArea", type=int, required=False, default=5,
+	help="Minimium percentage of image area required to trigger motion.")
 args = vars(ap.parse_args())
 
 # load the known faces and embeddings along with OpenCV's Haar
@@ -103,23 +105,46 @@ tolerance = float(args["tolerance"])
 # start the FPS counter
 fps = FPS().start()
 
+printjson("status", "starting stream analysis...")
 # loop over frames from the video file stream
+frame1 = None
 while True:
 	# grab the frame from the threaded video stream and resize it
 	# to 500px (to speedup processing)
 	originalFrame = vs.read()
 	if args["usePiCamera"] < 1 and args["rotateCamera"] != 0:
-		originalFrame = imutils.rotate(originalFrame, angle=args["rotateCamera"])	
+		originalFrame = imutils.rotate(originalFrame, angle=args["rotateCamera"])
 	frame = imutils.resize(originalFrame, width=500)
-
+	# convert frame to grayscale, and blur it
+	gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+	gray = cv2.GaussianBlur(gray, (21, 21), 0)
+	# if the first frame is None, initialize it
+	if frame1 is None:
+		frame1 = gray
+		continue
+	# compute the absolute difference between the current frame and
+	# first frame
+	frameDelta = cv2.absdiff(frame1, gray)
+	thresh = cv2.threshold(frameDelta, 25, 255, cv2.THRESH_BINARY)[1]
+	# dilate the thresholded image to fill in holes, then find contours
+	# on thresholded image
+	thresh = cv2.dilate(thresh, None, iterations=2)
+	cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL,
+		cv2.CHAIN_APPROX_SIMPLE)
+	cnts = imutils.grab_contours(cnts)
+	# filter contours
+	cnts =	[c for c in cnts if cv2.contourArea(c) > args["minArea"]]
+	frame1 = gray
+	if len(cnts) == 0:
+		continue
+	printjson("motion","general motion detected")
 	if args["method"] == "dnn":
 		# load the input image and convert it from BGR (OpenCV ordering)
 		# to dlib ordering (RGB)
 		rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 		# detect the (x, y)-coordinates of the bounding boxes
 		# corresponding to each face in the input image
-		boxes = face_recognition.face_locations(rgb,
-			model=args["detectionMethod"])
+		boxes = face_recognition.face_locations(rgb,model=args["detectionMethod"])
 	elif args["method"] == "haar":
 		# convert the input frame from (1) BGR to grayscale (for face
 		# detection) and (2) from BGR to RGB (for face recognition)
