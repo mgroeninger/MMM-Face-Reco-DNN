@@ -57,7 +57,7 @@ ap.add_argument("-d", "--detectionMethod", type=str, required=False, default="ho
 	help="face detection model to use: either `hog` or `cnn`")
 ap.add_argument("-i", "--interval", type=int, required=False, default=2000,
 	help="interval between recognitions")
-ap.add_argument("-o", "--output", type=int, required=False, default=1,
+ap.add_argument("-o", "--output", type=int, required=False, default=0,
 	help="Show output")
 ap.add_argument("-eds", "--extendDataset", type=str2bool, required=False, default=False,
 	help="Extend Dataset with unknown pictures")
@@ -118,19 +118,18 @@ while True:
 	# convert frame to grayscale, and blur it
 	gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 	gray = cv2.GaussianBlur(gray, (21, 21), 0)
-	# if the first frame is None, initialize it
+	# if the first frame is None, initialize it and grab start loop again
 	if frame1 is None:
+		printjson("status", "first frame, restarting loop")
 		frame1 = gray
 		continue
-	# compute the absolute difference between the current frame and
-	# first frame
+	# compute the absolute difference between the current frame and first frame
 	frameDelta = cv2.absdiff(frame1, gray)
 	thresh = cv2.threshold(frameDelta, 25, 255, cv2.THRESH_BINARY)[1]
 	# dilate the thresholded image to fill in holes, then find contours
 	# on thresholded image
 	thresh = cv2.dilate(thresh, None, iterations=2)
-	cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL,
-		cv2.CHAIN_APPROX_SIMPLE)
+	cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 	cnts = imutils.grab_contours(cnts)
 	# filter contours
 	cnts =	[c for c in cnts if cv2.contourArea(c) > args["minArea"]]
