@@ -59,6 +59,8 @@ Module.register('MMM-Face-Reco-DNN', {
     dataset: 'modules/MMM-Face-Reco-DNN/dataset/',
     // How much distance between faces to consider it a match. Lower is more strict.
     tolerance: 0.6,
+    // Minimium area of change for motion detection to trigger
+    minArea: 5,
     // allow multiple concurrent user logins, 0=no, any other number is the maximum number of concurrent logins
     multiUser: 0,
     // turn on extra debugging 0=no, 1=yes
